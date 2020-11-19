@@ -9,29 +9,12 @@
 
 // updateとdraw以外消したいです。
 
-"use strict";
-
 const INF = Infinity; // 長いので
 const DEFAULT_PATTERN_INDEX = 0;
 
 // 今のままでいいからとりあえず関数化とか変数化、やる。
 // 解析用グローバル変数
 let isLoop = true;
-let showInfo = true;
-
-// 解析用パラメータ
-let runTimeSum = 0;
-let runTimeAverage = 0;
-let runTimeMax = 0;
-let updateTimeAtMax = 0;
-let collisionCheckTimeAtMax = 0;
-let actionTimeAtMax = 0;
-let ejectTimeAtMax = 0;
-let drawTimeAtMax = 0;
-let usingUnitMax = 0;
-const INDENT = 40;
-const AVERAGE_CALC_SPAN = 10;
-const TEXT_INTERVAL = 25;
 
 let mySystem; // これをメインに使っていく
 
@@ -72,7 +55,7 @@ function setup(){
 
 /*
   weaponData[weaponCapacity++] = {
-    // ここにいろいろかく
+    // 武器を追加したい場合はどうぞ
   };
 */
   mySystem.createPlayer(weaponData);
@@ -411,101 +394,9 @@ mySystem.addPatternSeed({
 }
 
 function draw(){
-  background(mySystem.backgroundColor);
-
-	const runStart = performance.now();
-	const updateStart = performance.now();
-  mySystem.update(); // 更新
-  const collisionCheckStart = performance.now();
-  mySystem.collisionCheck(); // 衝突判定
-  const collisionCheckEnd = performance.now();
-  const actionStart = performance.now();
-  mySystem.execute(); // 行動
-  const actionEnd = performance.now();
-	const updateEnd = performance.now();
-	const ejectStart = performance.now();
-  mySystem.eject(); // 排除
-	const ejectEnd = performance.now();
-	const drawStart = performance.now();
-  mySystem.draw(); // 描画
-	const drawEnd = performance.now();
-  const runEnd = performance.now();
-
-	if(showInfo){ showPerformanceInfo(runEnd - runStart, collisionCheckEnd - collisionCheckStart,
-                                    actionEnd - actionStart,
-                                    updateEnd - updateStart, ejectEnd - ejectStart, drawEnd - drawStart); }
+  mySystem.update(); // 更新、衝突判定、行動、排除処理
+  mySystem.draw(); // 描画処理
   drawConfig();
-}
-
-// ---------------------------------------------------------------------------------------- //
-// PerformanceInfomation.
-
-function showPerformanceInfo(runTime, collisionCheckTime, actionTime, updateTime, ejectTime, drawTime){
-  let y = 0; // こうすれば新しいデータを挿入しやすくなる。指定しちゃうといろいろとね・・
-  // ほんとは紐付けとかしないといけないんだろうけど。
-	fill(mySystem.infoColor);
-  y += TEXT_INTERVAL;
-  displayInteger(mySystem.getCapacity(), INDENT, y, "using");
-  y += TEXT_INTERVAL;
-  displayInteger(mySystem.particleArray.length, INDENT, y, "particle");
-
-  y += TEXT_INTERVAL;
-  displayRealNumber(runTime, INDENT, y, "runTime");
-
-  runTimeSum += runTime;
-  if(frameCount % AVERAGE_CALC_SPAN === 0){
-		runTimeAverage = runTimeSum / AVERAGE_CALC_SPAN;
-		runTimeSum = 0;
-	}
-  y += TEXT_INTERVAL;
-  displayRealNumber(runTimeAverage, INDENT, y, "runTimeAverage");
-  if(runTimeMax < runTime){
-    runTimeMax = runTime;
-    collisionCheckTimeAtMax = collisionCheckTime;
-    actionTimeAtMax = actionTime;
-    updateTimeAtMax = updateTime;
-    ejectTimeAtMax = ejectTime;
-    drawTimeAtMax = drawTime;
-  }
-  y += TEXT_INTERVAL;
-  displayRealNumber(runTimeMax, INDENT, y, "runTimeMax");
-  y += TEXT_INTERVAL;
-  displayRealNumber(updateTimeAtMax, INDENT, y, "--update");
-  y += TEXT_INTERVAL;
-  displayRealNumber(collisionCheckTimeAtMax, INDENT, y, "----collision");
-  // collisionはエンジン使った方が速いんかな・・あと高速化の工夫がもっと必要なんだろ
-  y += TEXT_INTERVAL;
-  displayRealNumber(actionTimeAtMax, INDENT, y, "----action");
-  // actionはcommand別の内訳が欲しい。
-  y += TEXT_INTERVAL;
-  displayRealNumber(ejectTimeAtMax, INDENT, y, "--eject");
-  y += TEXT_INTERVAL;
-  displayRealNumber(drawTimeAtMax, INDENT, y, "--draw");
-  // 別にいいけど、runTimeMaxになった時だけあれ、内訳を更新して表示してもいいと思う。--とか付けて。
-
-  if(usingUnitMax < mySystem.getCapacity()){ usingUnitMax = mySystem.getCapacity(); }
-  y += TEXT_INTERVAL * 2;
-  displayInteger(usingUnitMax, INDENT, y, "usingUnitMax");
-
-  // 色について内訳表示
-  y += TEXT_INTERVAL * 2;
-  Object.keys(mySystem.drawGroup).forEach((name) => {
-    displayInteger(mySystem.drawGroup[name].length, INDENT, y, name);
-    y += TEXT_INTERVAL;
-  })
-}
-
-// 表示関数（実数版）
-function displayRealNumber(value, x, y, explanation, precision = 4){
-  // 与えられた実数を(x, y)の位置に小数点以下precisionまで表示する感じ(explanation:~~~って感じ)
-  const valueStr = value.toPrecision(precision);
-  const innerText = `${valueStr}ms`;
-  text(explanation + ":" + innerText, x, y);
-}
-
-// 整数版
-function displayInteger(value, x, y, explanation){
-  text(explanation + ":" + value, x, y);
 }
 
 // ---------------------------------------------------------------------------------------- //
@@ -515,9 +406,6 @@ function keyTyped(){
   if(key === 'p'){
     if(isLoop){ noLoop(); isLoop = false; return; }
     else{ loop(); isLoop = true; return; }
-  }else if(key === 'i'){
-    if(showInfo){ showInfo = false; return; }
-    else{ showInfo = true; return; }
   }
 }
 
